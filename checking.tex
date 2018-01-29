@@ -1,0 +1,259 @@
+\section{Contract checking}
+
+\begin{frame}[t,fragile]{Assertion level}
+\begin{itemize}
+  \item Every contract expression has an associated \emph{assertion level}.
+
+  \vfill\pause
+  \item Contract levels:
+    \cppkey{always},
+    \cppkey{default},
+    \cppkey{audit},
+    \cppkey{axiom}.
+    \begin{itemize}
+      \item Checks will be effectively performed depending on build mode.
+    \end{itemize}
+
+  \vfill\pause
+  \item Default level can be omitted.
+
+\begin{lstlisting}
+void f(element & x) [[expects: x.valid()]];
+void g(element & x) [[expects default: x.valid()]];
+\end{lstlisting}
+
+  \vfill\pause
+  \begin{itemize}
+    \item Cost of \cppkey{default} checking is expected to be small compared to function execution.
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t,fragile]{Audit checks}
+\begin{itemize}
+  \item An \cppkey{audit} \emph{assertion level} is expected to be used in cases
+where the cost of a run-time check is assumed to be large compared to function
+execution.
+    \begin{itemize}
+      \item Or at least significant.
+    \end{itemize}
+\end{itemize}
+\begin{lstlisting}
+template <typename It, typename T>
+bool binary_search(It first, It last, const T & x)
+  [[expects audit: is_sorted(first,last)]];
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[t,fragile]{Axiom checks}
+\begin{itemize}
+  \item An \cppkey{axiom} \emph{assertion level} is expected to be used in cases
+where the run-time check will \textmark{never} be performed.
+    \begin{itemize}
+      \item Still they need to be valid C++.
+      \item They are formal comments for humans and/or static analyzers.
+    \end{itemize}
+\end{itemize}
+
+\vfill\pause
+\begin{lstlisting}
+template <typename InputIterator>
+InputIterator my_algorithm(InputIterator first, InputIterator last)
+  [[expects axiom: first!=last && reachable(first,last)]];
+\end{lstlisting}
+
+\vfill\pause
+\begin{itemize}
+  \item Axioms are not evaluated.
+    \begin{itemize}
+      \item They may contain calls to declared but undefined functions.
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t,fragile]{Always checks}
+\begin{itemize}
+  \item An \cppkey{always} \emph{assertion level} is expected to be used in cases
+where the run-time check is so critical that it should never be switched off.
+    \begin{itemize}
+      \item It should be used only exceptionally.
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t]{Build levels}
+\begin{itemize}
+  \item Every translation is performed in a \emph{build level}:
+    \begin{itemize}
+      \item \textgood{off}: No run-time checking is performed.
+      \item \textgood{default}: Checks with \cppkey{default} levels are checked.
+      \item \textgood{audit}: Checks with \cppkey{default} and \cppkey{audit}
+levels are checked.
+    \end{itemize}
+  
+  \vfill\pause
+  \item How do you select the \emph{build level}:
+    \begin{itemize}
+      \item \textbad{No way of selecting in source code.}
+      \item An option from your compiler.
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t,fragile]{Contract checking}
+\begin{itemize}
+\item If a function has multiple preconditions or postconditions
+that would be checked, their \textmark{evaluation will be performed
+in the order they appear}
+\end{itemize}
+
+\vfill\pause
+\begin{lstlisting}
+void f(int * p)
+  [[expects: p!=nullptr]]
+  [[expects: *p == 0]] // Only checked when p!=nullptr
+{
+  *p = 1;
+}
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[t,fragile]{Contract violation handlers}
+\begin{itemize}
+  \item A translation unit has an associated contract violation handler.
+
+  \vfill\pause
+  \item A contract violation handler is the function to be called when a
+contract is broken.
+    \begin{itemize}
+      \item Function with specific signature.
+\begin{lstlisting}
+void (const std::contract_violation &);
+\end{lstlisting}
+    \end{itemize}
+
+  \vfill\pause
+  \item If you do not supply a handler, the default is \cppid{std::abort()}.
+
+  \vfill\pause
+  \item If you want to supply a handler:
+    \pause
+    \begin{itemize}[<+->]
+      \item \textbad{No way of setting through source code}.
+      \item \textbad{No way of asking which is current handler}.
+      \item \textgood{An option in your compiler to supply it}.
+      \item \textmark{Security sensitive systems may prevent arbitrary
+handlers}.
+    \end{itemize}
+
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t,fragile]{Information for the handler}
+\begin{itemize}
+  \item Function with specific signature.
+\begin{lstlisting}
+void (const std::contract_violation &);
+\end{lstlisting}
+
+  \vfill\pause
+  \item Minimum information inf \cppid{contract\_violation}:
+\begin{lstlisting}
+  class contract_violation {
+  public:
+    int line_number() const noexcept;
+    string_view file_name() const noexcept;
+    string_view function_name() const noexcept;
+    string_view comment() const noexcept;
+  };
+\end{lstlisting}
+
+  \vfill\pause
+  \item Might get simplified by \cppid{std::experimental::source\_location}.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t]{What happens after the violation handler?}
+\begin{itemize}
+  \item Two basic options:
+    \begin{itemize}
+      \item Program \emph{finishes} execution.
+      \item Program resumes execution.
+    \end{itemize}
+
+  \vfill\pause
+  \item An option in your compiler to select \emph{continuation mode}:
+    \begin{itemize}
+      \item \textmark{off}: Do not resume execution.
+        \begin{itemize}
+          \item Default option.
+        \end{itemize}
+      \item \textmark{on}: Resume execution.
+    \end{itemize}
+
+  \vfill\pause
+  \item But remember:
+    \pause
+    \begin{itemize}[<+->]
+      \item \textbad{No way of setting through source code}.
+      \item \textbad{No way of asking which is current mode}.
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t]{Why do we want to continue?}
+\begin{itemize}
+  \item Gradual introduction of contracts.
+
+  \vfill\pause
+  \item Testing the contracts themselves.
+
+  \vfill\pause
+  \item Plugin management.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t,fragile]{Continuation mode and optimizations}
+\begin{itemize}
+  \item Assertion information may be used by optimizers.
+\end{itemize}
+\begin{lstlisting}
+[[assert: ptr!=nullptr]];
+//...
+if (ptr!=nullptr) { // Can be optimized out
+  do_stuff();
+}
+\end{lstlisting}
+\vfill\pause
+\begin{itemize}[<+->]
+  \item If continuation mode is \textgood{off}, then \cppkey{if} is never reached.
+  \item If continuation mode is \textgood{on}, then \cppkey{if} would be
+reached.
+    \begin{itemize}[<+->]
+      \item But the \cppkey{if} might get \textbad{optimized out}!
+      \item \textmark{Continuation after violation is technically undefined behavior}.
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t,fragile]{Contracts and \textbf{noexcept}}
+\begin{itemize}
+  \item What happens to \cppkey{noexcept} function if its contract is broken?
+    \begin{itemize}
+      \item With continuation mode set to \cppkey{off} program finishes.
+      \item With continuation mode set to \cppkey{on} program resumes.
+      \item But, what if the handler throws an exception'
+        \begin{itemize}
+          \item Program invokes \cppid{terminate()} \emph{as-if} an exception was thrown inside
+functions.
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+\begin{lstlisting}
+void f(int x) [[expects: x > 0]];
+
+void g() {
+  f(-1); // Invokes terminate if handler throws
+}
+\end{lstlisting}
+\end{frame}

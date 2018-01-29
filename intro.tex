@@ -1,0 +1,129 @@
+\section{Introduction}
+
+\begin{frame}[t]{Correctness and Robustness}
+\begin{itemize}
+  \item In the design of a library there is a tension between two related
+properties: \textmark{robustness} and \textmark{correctness}.
+
+  \vfill
+  \begin{itemize}
+
+    \pause
+    \item \textgood{Correctness} $\rightarrow$ Degree to which a software
+component matches its specification.
+
+    \pause
+    \item \textgood{Robustness} $\rightarrow$ Ability of a software component to
+react appropriately to abnormal conditions.
+
+  \end{itemize}
+
+  \vfill
+  \pause
+  \item Today many libraries use a single feature for managing both properties:
+        \textgood{exception handling}.
+    \begin{itemize}
+      \item \textbad{We need to revisit this approach!}
+    \end{itemize}
+
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t]{Exceptions in use}
+\begin{itemize}
+  \item When a failure happens, we use exceptions as an error reporting
+mechanism.
+    \begin{itemize}
+      \item Notify that an error has occurred and needs to be handled.
+      \item We decouple error identification from error handling.
+      \item \textenum{Example}: Throwing \cppid{bad\_alloc}.
+    \end{itemize}
+  \vfill\pause
+  \item When library detects an assumption was not met, it needs a mechanism to
+react.
+    \begin{itemize}
+      \item Assumption not met $\Rightarrow$ \textmark{contract violation}.
+      \item What do we do on contract violations?
+        \begin{itemize}
+          \item Ignore reality $\rightarrow$ \textbad{Do not call me!}
+          \item Document.
+          \item Throw exceptions.
+        \end{itemize}
+    \end{itemize}
+  \vfill\pause
+  \item \textmark{Robustness} and \textmark{correctness} are orthogonal
+properties and \textgood{should be managed independently}.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t]{Robustness in the C++ standard library}
+\begin{itemize}
+  \item \textgood{Robustness}: Identification and handling of abnormal
+situations.
+    \begin{itemize}
+      \item Those situations occur in completely correct programs.
+      \item \textmark{Example}: Failure to allocate memory.
+      \item Is end of file a robustness issue?
+    \end{itemize}
+
+  \vfill\pause
+  \item The C++ standard library identifies those cases by specifying
+    \begin{enumerate}[i]
+      \item the condition firing the situation.
+      \item the exception that will be thrown to notify.
+    \end{enumerate}
+  \vfill\pause
+  \item \cppid{T * allocator<T>::allocate(std::size\_t n);}
+\fcolorbox{black}{blue!20!white}{
+\emph{Throws}: \cppid{bad\_alloc} if storage cannot be obtained.
+}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t]{Correctness and contracts}
+\begin{itemize}
+  \item \textgood{Correctness} $\rightarrow$ Finding programming errors.
+    \begin{itemize}
+      \item Yes! Sometimes we write incorrect software.
+    \end{itemize}
+
+  \vfill\pause
+  \item Who's guilty?
+  \item A contract violation happens because:
+    \begin{itemize}
+      \item A caller does not fulfil the expectations before calling a function.
+      \item A callee does not fulfill what should be ensured after its own
+execution.
+    \end{itemize}
+  \vfill\pause
+  \item A key difference:
+    \begin{itemize}
+      \item A program failure is usually due to external conditions and cannot
+be avoided.
+      \item A contract violation \textmark{\emph{should}} never happen in a
+correct program.
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t]{Correctness in the C++ standard library}
+\begin{itemize}
+  \item From the standard:
+\end{itemize}
+\vspace{.25ex}
+\fcolorbox{black}{blue!30!white}{
+\begin{minipage}{\textwidth}
+Violation of the preconditions specified in a function's \emph{Requires}: paragraph
+results in undefined behavior unless the functions \emph{Throws}: paragraph specifies
+throwing an exception when the precondition is violated.
+\end{minipage}
+}
+  \vfill\pause
+\begin{itemize}
+  \item In practice, there are two approaches in the standard library:
+    \begin{itemize}
+      \item Do nothing $\rightarrow$ \textbad{Undefined behaviour}.
+      \item Notify $\rightarrow$ \textmark{Throw an exception}.
+    \end{itemize}
+\end{itemize}
+\end{frame}

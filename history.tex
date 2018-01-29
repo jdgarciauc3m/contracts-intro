@@ -1,0 +1,61 @@
+\section{A brief history of contracts}
+
+\begin{frame}[t,fragile]{Why are we here?}
+\begin{itemize}
+  \item Because we are concerned about writing correct software.
+
+  \vfill\pause
+  \item Isn't a library solution enough?
+    \pause
+    \begin{itemize}
+      \item We already tried that!
+      \item Compilers and static analyzers do not understand that approach.
+    \end{itemize}
+
+  \vfill\pause
+  \item What did others do?
+    \pause
+    \begin{itemize}
+      \item Several language solutions out there (D, Ada, C\#).
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t]{Contracts in C++}
+\begin{itemize}
+  \item First proposal for contracts programming in 2005.
+    \begin{itemize}
+      \item \textmark{N1613}: Proposal to add Design by Contract to C++.
+            Throsten Ottosen.
+      \item Died during the C++0x process.
+    \end{itemize}
+
+  \vfill\pause
+  \item Next attempt in 2013.
+    \begin{itemize}
+      \item \textmark{N3604}: Centralized Defensive-Programming Support for
+Narrow Contracts.
+            John Lakos, Alexei Zakharov.
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t]{Current contracts effort}
+\begin{itemize}
+  \item 2014:Multiple proposals on contracts programming.
+    \vfill
+    \begin{itemize}
+      \item Discussions in the standards committee.
+    \end{itemize}
+
+  \vfill\pause
+  \item 2016: Joint proposal trying to consider trade-offs.
+    \begin{itemize}
+    \vfill
+      \item Gabriel Dos Reis, J. Daniel Garcia, John Lakos, Alisdair Meredith,
+Nathan Myers, Bjarne Stroustrup.
+    \vfill
+      \item Targeting C++20.
+    \end{itemize}
+\end{itemize}
+\end{frame}

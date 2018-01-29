@@ -1,0 +1,28 @@
+\section{Summary}
+
+\begin{frame}[t]{Summary}
+\begin{itemize}
+  \item \textmark{Robustness} and \textmark{correctness} are orthogonal properties.
+    \begin{itemize}
+      \item Use \textgood{exceptions} for \textmark{robustness}.
+      \item Use \textgood{contracts} for \textmark{correctness}.
+    \end{itemize}
+
+  \vfill\pause
+  \item \textgood{Preconditions} and \textgood{postconditions} are part of the
+        function's interface.
+    \begin{itemize}
+      \item \textgood{Assertions} are part of funciont implementation.
+    \end{itemize}
+
+  \vfill\pause
+  \item The \textmark{assertion level} specifies under which \textgood{build levels}
+        the checking should happen.
+
+  \vfill\pause
+  \item Start today expressing your contracts using the GSL support library.
+    \begin{itemize}
+      \item \textgood{\url{https://github.com/Microsoft/GSL}}.
+    \end{itemize}
+\end{itemize}
+\end{frame}

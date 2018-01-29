@@ -1,0 +1,377 @@
+\section{Contracts on interfaces}
+
+\begin{frame}[t,fragile]{Repeating a contract}
+\begin{itemize}
+  \item Any redeclaration of a function has either the same contract or
+completely omits the contract.
+\end{itemize}
+\vfill\pause
+\begin{lstlisting}
+int f(int x)
+  [[expects: x>0]]
+  [[ensures r: r >0]];
+
+int f (int x) ; // OK. No contract.
+
+int f ( int x)
+  [[expects: x>=0]]; // Error missing ensures and different expects
+
+int f(int x)
+  [[expects: x>0]]
+  [[ensures r: r >0]]; //OK. Same contract.
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[t,fragile]{Preconditions on functions}
+\begin{itemize}
+  \item The expression of a precondition from a function may use:
+    \begin{itemize}
+      \item The function’s arguments.
+      \item Any non-local object. 
+    \end{itemize}
+\end{itemize}
+\begin{lstlisting}
+constexpr int max = 100;
+std::string name{"Daniel"};
+
+bool f(int x, std::string s)
+  [[expects: x>0]] // OK. x is an argument.
+  [[expects: x<max]] // OK max is non-local
+  [[expects: s.length()>0]] // OK. s is an argument
+  [[expects: s!=name]]; // OK. name is non-local
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[t,fragile]{Preconditions on \textbf{constexpr} functions}
+\begin{itemize}
+  \item The expression of a precondition from a \cppkey{constexpr} function may use:
+    \begin{itemize}
+      \item The function’s arguments.
+      \item Any non-local object that is \cppkey{constexpr}.
+      \item \textbad{but it cannot access non-local objects that are not
+\cppkey{constexpr}}.
+    \end{itemize}
+\end{itemize}
+\begin{lstlisting}
+constexpr int max = 100;
+std::string name{"Daniel"};
+
+constexpr bool f(int x, std::string s)
+  [[expects: x>0]] // OK. x is an argument.
+  [[expects: x<max]] // OK max is constexpr
+  [[expects: s.length()>0]] // OK. s is an argument
+  [[expects: s!=name]]; // Error name is a non-local variable
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[t,fragile]{Modifications in contracts}
+\begin{itemize}
+  \item A program with a contract expression that performs an
+\textmark{observable modification} of an object is \textbad{ill-formed}.
+    \begin{itemize}
+      \item Your compiler might give a diagnostic.
+    \end{itemize}
+\end{itemize}
+
+\vfill\pause
+\begin{lstlisting}
+int f(int x)
+  [[expects: x++ > 0]]     // Error
+  [[ensures r: r == ++x]]; // Error
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[t,fragile]{Modified arguments and postconditions}
+\begin{itemize}
+  \item If a postcondition uses an argument and the function body modifies that
+value, the program is ill-formed.
+\end{itemize}
+
+\vfill\pause
+\begin{lstlisting}
+int f(int x)
+  [[ensures r: r==x]
+{
+  return ++x; // Error x used in postcondition
+}
+\end{lstlisting}
+\pause
+\begin{itemize}
+  \item Workaround:
+\end{itemize}
+\begin{lstlisting}
+int f(int x) {
+  int oldx = x;
+  auto r = ++x; 
+  [[assert: r==oldx]];
+}
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[t,fragile]{But you con modify pointer contents}
+\begin{itemize}
+  \item A pointer value is different from the pointed value.
+\end{itemize}
+
+\vfill\pause
+\begin{lstlisting}
+void f(int * ptr)
+  [[ensures: ptr!=nullptr]]
+{
+  *ptr = 42
+}
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[t,fragile]{Contracts in templated function}
+\begin{itemize}
+  \item The expression of a contract from a function template
+        or a member function of a class template may use the
+        template arguments.
+\end{itemize}
+
+\vfill\pause
+\begin{lstlisting}
+template <typename T, int size>
+class table {
+public:
+  //...
+  T & operator[](int i)
+    [[expects: 0<=i && i<size]];
+};
+\end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[t,fragile]{Contracts and visibility}
+\begin{itemize}
+  \item The contract from a public function shall not use members from protected
+or private interfaces.
+  \item The contract from a protected function shall not use members from private 
+interface.
+\end{itemize}
+
+\vfill\pause
+\begin{lstlisting}
+template <typename T>
+class table {
+public:
+  //...
+  T & operator[](int i)
+    [[expects: 0<=i && i<size_]]; // Error. size_ is private
+
+private:
+  //...
+  int size_;
+};
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[t,fragile]{Contracts and function pointers}
+\begin{itemize}
+  \item A function pointer shall not include a contract.
+  \item A call through a function pointer to functions with
+a contract shall perform contract assertions checking once.
+\end{itemize}
+
+\vfill\pause
+\begin{lstlisting}
+using fpt = int (*)(int x)
+  [[expects: x>=0]]
+  [[ensures r: r>0]]; // Error. 
+
+int g(int x) [[expects: x>=0]] [[ensures r: r>0]]
+{
+ return x+1;
+}
+
+int (*pf)(int) = g; // OK
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[t,fragile]{Contracts and inheritance}
+\begin{itemize}
+  \item An \textmark{overriding function} shall have exactly the \textgood{same
+contract} that was declared for that function in the base class.
+    \begin{itemize}
+      \item But the contract may be omitted in the overridden function.
+    \end{itemize}
+\end{itemize}
+
+\vfill\pause
+\begin{lstlisting}
+struct B {
+public:
+  virtual void f (int x) [[expects: x>0]];
+  //...
+};
+
+struct D : public B {
+public:
+  virtual void f (int x) override; // OK. expects: x>0
+  //...
+};
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[t,fragile]{Contracts and inheritance}
+\begin{itemize}
+  \item An \textmark{overriding function} shall have exactly the \textgood{same
+contract} that was declared for that function in the base class.
+    \begin{itemize}
+      \item Or it may be repeated.
+    \end{itemize}
+\end{itemize}
+
+\vfill\pause
+
+\begin{lstlisting}
+struct B {
+public:
+  virtual void f (int x) [[expects: x>0]];
+  //...
+};
+
+struct D : public B {
+public:
+  virtual void f (int x) override [[expects: x>0]]; // OK
+  //...
+};
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[t,fragile]{Contracts and inheritance}
+\begin{itemize}
+  \item An \textmark{overriding function} shall have exactly the \textgood{same
+contract} that was declared for that function in the base class.
+    \begin{itemize}
+      \item But the contract cannot be changed.
+    \end{itemize}
+\end{itemize}
+
+\vfill\pause
+
+\begin{lstlisting}
+struct B {
+public:
+  virtual void f (int x) [[expects: x>0]];
+  //...
+};
+
+struct D : public B {
+public:
+  virtual void f (int x) override [[expects: x!=0]]; // Error
+  //...
+};
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[t,fragile]{Contracts and inheritance}
+\begin{itemize}
+  \item An \textmark{overriding function} shall have exactly the \textgood{same
+contract} that was declared for that function in the base class.
+    \begin{itemize}
+      \item And it cannot be added.
+    \end{itemize}
+\end{itemize}
+
+\vfill\pause
+
+\begin{lstlisting}
+struct B {
+public:
+  virtual void f (int x);
+  //...
+};
+
+struct D : public B {
+public:
+  virtual void f (int x) override [[expects: x>0]]; // Error.
+  //...
+};
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[t,fragile]{Precondition weakening}
+\begin{itemize}
+  \item Precondition weakening is not supported.
+    \begin{itemize}
+      \item But can be simulated.
+    \end{itemize}
+\end{itemize}
+
+\vfill\pause
+\begin{columns}[T]
+
+\column{.5\textwidth}
+\begin{lstlisting}
+class A {
+pubic:
+  //...
+  virtual void f(int x)
+    [[expects: x>0]]
+  {
+    [[assert: x<max]];
+    //..
+  }
+};
+\end{lstlisting}
+
+\column{.5\textwidth}
+\begin{lstlisting}
+class B : public A {
+pubic:
+  //...
+  virtual void f(int x) override
+    [[expects: x>0]]
+  {
+    //...
+  }
+};
+\end{lstlisting}
+
+\end{columns}
+\end{frame}
+
+\begin{frame}[t,fragile]{Postcondition strengthening}
+\begin{itemize}
+  \item Postcondition strengthening is not supported.
+    \begin{itemize}
+      \item but can be simulated.
+    \end{itemize}
+\end{itemize}
+
+\vfill\pause
+\begin{columns}[T]
+
+\column{.5\textwidth}
+\begin{lstlisting}
+class A {
+pubic:
+  //...
+  virtual int g()
+    [[ensures r: r>=0]]
+  {
+    //..
+  }
+};
+\end{lstlisting}
+
+\column{.5\textwidth}
+\begin{lstlisting}
+class B : public A {
+pubic:
+  //...
+  virtual int g() override
+    [[ensures r: r>=0]]
+  {
+    //...
+    [[assert: result<max]];
+    return result;
+  }
+};
+\end{lstlisting}
+
+\end{columns}
+
+\end{frame}

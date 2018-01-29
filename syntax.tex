@@ -1,0 +1,169 @@
+\section{Contracts in C++}
+
+\begin{frame}[t]{What is a contract?}
+\begin{itemize}
+  \item A contract is the set of \textmark{preconditions},
+\textmark{postconditions} and \textmark{assertions} associated to a function.
+    \begin{itemize}
+      \vfill\pause
+      \item \textgood{Precondition}: What are the \emph{expectations} of the function?
+      \vfill\pause
+      \item \textgood{Postconditions}: What must the function \emph{ensure}
+            upon termination?
+      \vfill\pause
+      \item \textgood{Assertions}: What predicates must be satisfied in specific
+            locations of a function body?
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t,fragile]{Expectations}
+\begin{itemize}
+  \item \textgood{Precondition}
+    \begin{itemize}
+      \item A predicate that should hold upon entry into a function.
+      \item It expresses a function's expectation on its arguments and/or the
+            state of objects that may be used by the function.
+      \item Expressed by attribute \cppkey{expects}.
+    \end{itemize}
+\end{itemize}
+
+\vfill\pause
+\begin{lstlisting}
+double sqrt(double x) [[expects: x>0]];
+\end{lstlisting}
+\pause
+\begin{lstlisting}
+class queue {
+  //...
+  void push(const T & x) [[expects: !full()]];
+  //...
+};
+\end{lstlisting}
+
+\vfill\pause
+\begin{itemize}
+  \item Preconditions use a modified attribute syntax.
+  \item The expectation is part of the function declaration.
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}[t,fragile]{Assurances}
+\begin{itemize}
+  \item \textgood{Postcondition}
+    \begin{itemize}
+      \item A predicate that should hold upon exit from a function.
+      \item It expresses the conditions that a function should ensure for the 
+            return value and/or the state of objects that may be used by the 
+            function.
+      \item Postconditions are expressed by \cppkey{ensures} attributes.
+    \end{itemize}
+\end{itemize}
+
+\vfill\pause
+\begin{lstlisting}
+double sqrt(double x)
+  [[expects: x>=0]]
+  [[ensures result: result>=0]];
+\end{lstlisting}
+
+\vfill\pause
+\begin{itemize}
+  \item Postconditions may introduce a name for the result of the function.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t,fragile]{Assertions}
+\begin{itemize}
+  \item \textgood{Assertions}
+    \begin{itemize}
+      \item A predicate that should hold at its point in a function body.
+      \item It expresses the conditions that must be satisfied, on objects that
+are accessible at its point in a body.
+      \item Assertions are expressed by assert attributes.
+    \end{itemize}
+\end{itemize}
+
+\vfill\pause
+\begin{lstlisting}
+double add_distances(const std::vector<double> & v) 
+  [[expects r: r>=0.0]]
+{
+  double r = 0.0;
+  for (auto x : v) {
+    [[assert: x >= 0.0]];
+    r += x;
+  }
+  return r;
+}
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[t]{Effect of contracts}
+\begin{itemize}
+  \item A contract has no observable effect on a correct program (except
+performance).
+    \begin{itemize}
+      \item The only semantic effect of a contract happens if it is violated.
+    \end{itemize}
+
+  \vfill\pause
+  \item Why do we use attributes syntax?
+    \begin{itemize}
+      \item Contract may be checked or not.
+      \item Attributes are not part of function type.
+      \item However, \textbad{contracts are not an optional feature}.
+    \end{itemize}
+
+  \vfill\pause
+  \item Contracts checking and corresponding effects depend on build system
+settings.
+    \begin{itemize}
+      \item Default: Contract violation $\Rightarrow$ Program
+termination.
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t,fragile]{Repeating a contract}
+\begin{itemize}
+  \item Any redeclaration of a function has either the same contract or
+completely omits the contract.
+\end{itemize}
+\vfill\pause
+\begin{lstlisting}
+int f(int x)
+  [[expects: x>0]]
+  [[ensures r: r >0]];
+
+int f (int x) ; // OK. No contract.
+
+int f ( int x)
+  [[expects: x>=0]]; // Error missing ensures and different expects
+
+int f(int x)
+  [[expects: x>0]]
+  [[ensures r: r >0]]; //OK. Same contract.
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[t,fragile]{Repeating a contract}
+\begin{itemize}
+  \item But argument names may differ.
+\end{itemize}
+
+\vfill\pause
+\begin{lstlisting}
+int f(int x)
+  [[expects: x>0]]
+  [[ensures r: r >0]];
+
+int f(int y)
+  [[expects: y>0]]
+  [[ensures z: z >0]];
+
+
+\end{lstlisting}
+\end{frame}
+

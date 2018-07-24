@@ -6,7 +6,6 @@
 
   \vfill\pause
   \item Contract levels:
-    \cppkey{always},
     \cppkey{default},
     \cppkey{audit},
     \cppkey{axiom}.
@@ -67,16 +66,6 @@ InputIterator my_algorithm(InputIterator first, InputIterator last)
   \item Axioms are not evaluated.
     \begin{itemize}
       \item They may contain calls to declared but undefined functions.
-    \end{itemize}
-\end{itemize}
-\end{frame}
-
-\begin{frame}[t,fragile]{Always checks}
-\begin{itemize}
-  \item An \cppkey{always} \emph{assertion level} is expected to be used in cases
-where the run-time check is so critical that it should never be switched off.
-    \begin{itemize}
-      \item It should be used only exceptionally.
     \end{itemize}
 \end{itemize}
 \end{frame}
@@ -161,15 +150,29 @@ void (const std::contract_violation &);
 \begin{lstlisting}
   class contract_violation {
   public:
-    int line_number() const noexcept;
+    uint_leaset32_t line_number() const noexcept;
     string_view file_name() const noexcept;
     string_view function_name() const noexcept;
     string_view comment() const noexcept;
+    string_view assertion_level() const noexcept;
   };
 \end{lstlisting}
 
   \vfill\pause
   \item Might get simplified by \cppid{std::experimental::source\_location}.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t]{What is the violation source location?}
+\begin{itemize}
+  \item \textgood{Precondition}: Reported location is implementation defined.
+    \begin{itemize}
+      \item Implementations are encouraged but not required to report caller site.
+    \end{itemize}
+  \item \textgood{Postcondition}: Reported location is the callee site.
+  \item \textgood{Assertion}: Location of the assertion itself.
+  \vfill
+  \item There is an orthogonal proposal to provide access to stack traces.
 \end{itemize}
 \end{frame}
 
@@ -220,7 +223,7 @@ void (const std::contract_violation &);
 \begin{lstlisting}
 [[assert: ptr!=nullptr]];
 //...
-if (ptr!=nullptr) { // Can be optimized out
+if (ptr==nullptr) { // Optimization opportunity
   do_stuff();
 }
 \end{lstlisting}

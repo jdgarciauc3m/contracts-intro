@@ -67,7 +67,7 @@ constexpr bool f(int x, std::string s)
 \begin{frame}[t,fragile]{Modifications in contracts}
 \begin{itemize}
   \item A program with a contract expression that performs an
-\textmark{observable modification} of an object is \textbad{ill-formed}.
+\textmark{observable modification} of an object is \textbad{undefined behavior}.
     \begin{itemize}
       \item Your compiler might give a diagnostic.
     \end{itemize}
@@ -76,8 +76,8 @@ constexpr bool f(int x, std::string s)
 \vfill\pause
 \begin{lstlisting}
 int f(int x)
-  [[expects: x++ > 0]]     // Error
-  [[ensures r: r == ++x]]; // Error
+  [[expects: x++ > 0]]     // Undefined behavior
+  [[ensures r: r == ++x]]; // Undefined behavior
 \end{lstlisting}
 \end{frame}
 

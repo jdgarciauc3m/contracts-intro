@@ -88,7 +88,7 @@ are accessible at its point in a body.
 \vfill\pause
 \begin{lstlisting}
 double add_distances(const std::vector<double> & v) 
-  [[expects r: r>=0.0]]
+  [[ensure r: r>=0.0]]
 {
   double r = 0.0;
   for (auto x : v) {
